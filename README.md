@@ -7,3 +7,6 @@ To begin the analysis, we will start by using term frequency (tf) and inverse do
   - Under the MSD_TFIDF folder, there is a file that I created that has additional word information called <b>Word Info.txt</b> in the following format:
     - The word itself, followed by the frequency of this word (across all tracks), and the number of tracks this word appears in.
     - For example: a line in the file will show "wreck 1879 1282"
+
+# To Import the Project into Eclipse...
+Import the MSD_TFIDF project folder as a Maven project. By doing this as a Maven project rather than a standard Java project, we can easily import and implement other libraries and tools in the code. 
