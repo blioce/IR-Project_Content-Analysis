@@ -4,7 +4,7 @@ This project will be the starting point for analyzing lyrics for potentially har
 # TF*IDF
 <b>A file has been created using all the words and all tracks in the train dataset file. The format is of the following: trackID,wordIndex:tf\*idf,wordIndex:tf\*idf,... (essentially the same format as the dataset file itself).
   
-  Due to the size of this file, visit this <a href="https://drive.google.com/file/d/1H3liP8iQI3SyuacBWzBOgMIsABEAR8cO/view?usp=sharing">link</a> on Google Drive to download. It is too large for github. By removing stopwords from the bag-of-words, we can greatly reduce the size of this file.</b>
+  Due to the size of this file, visit this <a href="https://drive.google.com/file/d/19pjdolTBUCrYVZTrrwDG67gXFcIZM00Y/view?usp=sharing">link</a> on Google Drive to download. It is too large for github. By removing stopwords from the bag-of-words, we can greatly reduce the size of this file.</b>
   
 To begin the analysis, we will start by using term frequency (tf) and inverse document frequency (idf) to gather data on the significance of the words in the lyrics. To implement the idf, we need to know the number of documents in the collection and the number of documents that each words appears in. 
   - For the first (train) dataset file, there are <b>210,519 tracks</b>.
