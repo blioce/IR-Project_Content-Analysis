@@ -7,114 +7,156 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
- * Hello world!
- *
+ * This program computes the TF*IDF values for a given track using the Million Songs
+ * Dataset. This dataset is split into two files, one for training and one for testing.
+ * Each file is implemented as a bag of words and the words are the same for each file. 
+ * This program writes the TF*IDF value for each word (excluding stopwords) in a track.
+ * 
+ * @author Brandon Lioce
+ * @version May 8th, 2018
+ * @class TCSS 554 - Spring 2018
+ * @assignment Content Analysis
  */
 public class App {
 
-	/** The first of two data files. This is the largest with most of the data. */
-	private static final String TRAIN_DATA_FILE = "src/mxm_dataset_train.txt";
+	/** The training data set. This file has the largest amount of data. */
+	private static final String MSD_DATA_FILE_1 = "src/mxm_dataset_train.txt";
+	
+	/** The testing data set. List of words are the same as in training set. */
+	private static final String MSD_DATA_FILE_2 = "src/mxm_dataset_test.txt";
+	
+	/** The file that contains the words and the number of tracks they appear in. */
+	private static final String WORD_DATA = "Updated_Word_Data.txt";
+	
+	/** The file with a list of stopwords that have little meaning or significance. */
+	private static final String STOPWORDS = "src/stopwords.txt";
+	
+	/** The output file where the TF*IDF data should be written. */
+	private static final String TFIDF_OUT = "TFIDF_removed_stopwords.txt";
 
-	/** The second of two data files. The 5,000 words are the same as in previous file. */
-	//	private static final String TEST_DATA_FILE = "src/mxm_dataset_test.txt";
+	/** A scanner object. */
+	private static Scanner myScanner;
 
-	private static Scanner scan;
+	/** The list of unique words. */
+	private static List<String> myWords;
 
-	private static List<String> words;
+	/** The word and track occurrence mapping. */
+	private static Map<String, Integer> myWordInfo;
+	
+	/** A set of stopwords to disregard. */
+	private static Set<String> myStopwords;
 
-//	private static List<String> trackIDs;
-
-	private static Map<String, Integer> wordInfo;
-
-	public static void main( String[] args ) throws IOException {
-		scan = new Scanner(new File(TRAIN_DATA_FILE));
-
-		words = new ArrayList<String>();
+	/**
+	 * The main entry to the program where the process of populating the known
+	 * words, removal of stopwords, and computation of TF*IDF will take place.
+	 * 
+	 * @param args No arguments are used to run this program.
+	 */
+	public static void main(String[] args) {
 		try {
 			populateWordList();
+			populateStopwords();
+			populateWordInfo();
 		} catch(FileNotFoundException e) {
-			System.out.println("Could not find file: " + TRAIN_DATA_FILE + e);
+			System.out.println("Could not find file.\n" + e.getMessage());
 			System.exit(1);
 		}
 
-		// Populate the trackIDs from the train dataset
-		//trackIDs = new ArrayList<String>();
-		//populateTrackIDs();
+		try {
+			/* WARNING -- CALLING THIS METHOD WILL APPEND TO THE FILE. TO START FRESH,
+			 * YOU MUST DELETE THE TFIDF_OUT.TXT FILE FIRST!
+			 */
+			computeTFIDF(MSD_DATA_FILE_1);
+			computeTFIDF(MSD_DATA_FILE_2);
+		} catch (IOException e) {
+			System.out.println("Error while attempting to write to file.\n" + e.getMessage());
+			System.exit(1);
+		}
 
-		// This will take in all the info about the occurrence of each word. 
-		populateWordInfo();
-
-		// Writes the data to a file in the same format that the data is read from the data file.
-		// trackId,wordIndex:idf,wordIndex:idf,.....
-		computeTFIDF();
-
-		/* TODO - INCORPORATE OTHER FILE ONCE WE CAN SUCCESSFULLY PROCESS THIS FILE. */
-
-		//		// Reset the scanner to the test data file and add those trackIds
-		//		try {
-		//			scan = new Scanner(new File(TEST_DATA_FILE));
-		//		} catch (FileNotFoundException e) {
-		//			System.out.println("Could not find file: " + TEST_DATA_FILE + e);
-		//			System.exit(1);
-		//		}
-		//		populateTrackIDs();
-		scan.close();
-
+		/* TODO - INCORPORATE OTHER FILE*/
 	}
+	
 
 	/** 
 	 * This method parses the list of words in the data file and stores them
 	 * in an indexed ArrayList object.
-	 * @return Returns the Scanner in the current state (to prevent multiple scanning).
 	 * @throws FileNotFoundException Error is thrown if file not found.
 	 */
 	private static void populateWordList() throws FileNotFoundException {
-		scan = new Scanner(new File(TRAIN_DATA_FILE));
+		myScanner = new Scanner(new File(MSD_DATA_FILE_1));
+		myWords = new ArrayList<String>();
 
 		String line = "";
-		while(scan.hasNextLine()) {
-			line = scan.nextLine();
+		while(myScanner.hasNextLine()) {
+			line = myScanner.nextLine();
 
 			// The line with comma-separated words begins with % character (only 1 line).
 			if(line.charAt(0) == '%') {
 				line = line.substring(1);
 				String[] listWords = line.split(",");
-				for(String s: listWords) words.add(s);
+				for(String s: listWords) myWords.add(s);
 				break;
 			} 
 		}
+		myScanner.close();
+	}
+	
+	/**
+	 * This method reads the stopwords from the file. These will be used to 
+	 * reduce the amount of unnecessary data before processing the TF*IDF.
+	 * 
+	 * @throws FileNotFoundException Throws an exception if the file is not found. 
+	 */
+	private static void populateStopwords() throws FileNotFoundException {
+		myScanner = new Scanner(new File(STOPWORDS));
+		myStopwords = new HashSet<String>();
+		while(myScanner.hasNext()) myStopwords.add(myScanner.next());
+		myScanner.close();
 	}
 
-//	/**
-//	 * This method scans the data file and stores the Million Songs Dataset
-//	 * trackId (the first ID in the line, not the second) and stores it in an
-//	 * ArrayList.
-//	 */
-//	private static void populateTrackIDs() {
-//		String line = "";
-//		while(scan.hasNextLine()) {
-//			line = scan.nextLine();
-//			if(line.charAt(0) != '#' && line.charAt(0) != '%') {
-//				trackIDs.add(line.substring(0, line.indexOf(",")));
-//			}
-//		}
-//	}
-
+	/** 
+	 * This method reads the word info (word and the number of tracks it appears in)
+	 * from the file and loads it into a HashMap.
+	 * 
+	 * @throws FileNotFoundException Throws an exception if the file is not found.
+	 */
 	private static void populateWordInfo() throws FileNotFoundException {
-		Scanner scan = new Scanner(new File("Word Data.txt"));
-		wordInfo = new HashMap<String, Integer>();
+		myScanner = new Scanner(new File(WORD_DATA));
+		myWordInfo = new HashMap<String, Integer>();
 		String line = "";
-		while(scan.hasNextLine()) {
-			line = scan.nextLine();
+		while(myScanner.hasNextLine()) {
+			line = myScanner.nextLine();
 			String[] tokens = line.split("\\s+");
-			wordInfo.put(tokens[0], Integer.valueOf(tokens[2]));
+			myWordInfo.put(tokens[0], Integer.valueOf(tokens[1]));
 		}
-		scan.close();
+		myScanner.close();
+	}
+	
+	/** 
+	 * This method computes the TF*IDF values for each line in the data file
+	 * (for each track). This uses the wordInfo data (from Word Data.txt file)
+	 * to computer the IDF.
+	 * @param fileName The file to scan and compute TF*IDF.
+	 * @throws IOException Returns an error if could not write file.
+	 */
+	private static void computeTFIDF(final String fileName) throws IOException {
+		BufferedWriter bw = new BufferedWriter(new FileWriter(TFIDF_OUT, true));
+		myScanner = new Scanner(new File(fileName));
+		
+		String line = "";
+		while(myScanner.hasNextLine()) {
+			line = myScanner.nextLine();
+			bw.write(parseLine(line));
+		}
+		bw.close();
+		myScanner.close();
 	}
 
 	/** 
@@ -123,93 +165,27 @@ public class App {
 	 * @param theLine The line of text data to parse.
 	 * @return Returns a String of the data on the line. 
 	 */
-	private static String parseLine(String theLine) {
-		StringBuilder sb = new StringBuilder();
-		if(theLine.charAt(0) == '#' || theLine.charAt(0) == '%') return null;
+	private static String parseLine(final String theLine) {
+		String res = "";
+		if(theLine.charAt(0) != '#' && theLine.charAt(0) != '%') {
+			String[] tokens = theLine.split(",");
+			String MSD_id = tokens[0];
 
-		String[] tokens = theLine.split(",");
-		String MSD_id = tokens[0];
-
-		sb.append("{" + MSD_id + ": ");
-		for(int i = 2; i < tokens.length; i++) {
-			String wordToken = tokens[i];
-			String[] data = wordToken.split(":");
-			Integer indexOfWord = Integer.valueOf(data[0]);
-			double tf = Double.valueOf(data[1]);
-			double idf = Math.log10(210519.0 / wordInfo.get(words.get(indexOfWord)));
-
-			// Appends a string of the word (in string form, not number) and the count
-			sb.append("[" + words.get(indexOfWord - 1) + ": " + (tf*idf) + "], ");
-
-
-		}
-		sb.deleteCharAt(sb.length() - 1);
-		sb.deleteCharAt(sb.length() - 1);
-		sb.append("}\n");
-		return sb.toString();
-	}
-
-	/**
-	 * This method returns the data the is associated with this trackID including
-	 * each word and the frequency it appears in the song.
-	 * @param trackID A String of the MSD trackID.
-	 * @return Returns a String of the data if trackID is found, else returns null.
-	 */
-	private static String parseLineByID(String trackID) {
-		Scanner scan;
-		try {
-			scan = new Scanner(new File(TRAIN_DATA_FILE));
-			String line = "";
-			while(scan.hasNextLine()) {
-				if(line.startsWith(trackID)) {
-					scan.close();
-					return parseLine(line);
-				}
-			}
-			scan.close();
-		} catch (FileNotFoundException e) {
-			System.out.println("Could not find file: " + TRAIN_DATA_FILE);
-			System.out.println(e);
-			System.exit(1);
-		}
-		return null;
-	}
-
-	/** 
-	 * This method computes the TF*IDF values for each line in the data file
-	 * (for each track). This uses the wordInfo data (from Word Data.txt file)
-	 * to computer the IDF.
-	 * @throws IOException Returns an error if could not write file.
-	 */
-	private static void computeTFIDF() throws IOException {
-		BufferedWriter bw = new BufferedWriter(new FileWriter("TF*IDF.txt"));
-		String line = "";
-		while(scan.hasNextLine()) {
-			line = scan.nextLine();
-
-			if(line.charAt(0) != '#' && line.charAt(0) != '%') {
-				String[] tokens = line.split(",");
-				String MSD_id = tokens[0];
-
-				String res = MSD_id + ",";
-				for(int i = 2; i < tokens.length; i++) {
-					String wordToken = tokens[i];
-					String[] data = wordToken.split(":");
-					Integer indexOfWord = Integer.valueOf(data[0]);
+			res = MSD_id + ",";
+			for(int i = 2; i < tokens.length; i++) {
+				String wordToken = tokens[i];
+				String[] data = wordToken.split(":");
+				Integer indexOfWord = Integer.valueOf(data[0]);
+				String word = myWords.get(indexOfWord - 1);
+				if(!myStopwords.contains(word)) {
 					double tf = Double.valueOf(data[1]);
-					double idf = Math.log10(210519.0 / wordInfo.get(words.get(indexOfWord - 1)));
+					double idf = Math.log10(210519.0 / myWordInfo.get(word));
 
 					res += indexOfWord + ":" + tf*idf +",";
-				}
-				res += "\n";
-				bw.write(res);
+				} 
 			}
+			res += "\n";
 		}
-		bw.close();
-	}
-}
-
-class WordInfo {
-	Integer count = 0;
-	Integer appearsIn = 0;
+		return res;
+	}	
 }
