@@ -32,6 +32,12 @@ public class App {
 	/** The testing data set. List of words are the same as in training set. */
 	private static final String MSD_DATA_FILE_2 = "src/mxm_dataset_test.txt";
 	
+	/** The list of drugs words and non-drug words for balancing. */
+	private static final String DRUG_WORDS = "src/drug_words_balanced2.txt";
+	
+	/** The list of violent words and non-violent words for balancing. */
+	private static final String VIOLENT_WORDS = "src/violent_words_balanced2.txt";
+	
 	/** The file that contains the words and the number of tracks they appear in. */
 	private static final String WORD_DATA = "Updated_Word_Data.txt";
 	
@@ -39,10 +45,13 @@ public class App {
 	private static final String STOPWORDS = "src/stopwords.txt";
 	
 	/** The output file where the TF*IDF data should be written. */
-	private static final String TFIDF_OUT = "TFIDF_removed_stopwords.txt";
+	private static final String TFIDF_OUT = "TFIDF_violent_words2.txt";
 
 	/** A scanner object. */
 	private static Scanner myScanner;
+	
+	/** The target words to isolate. */
+	private static Set<String> myTargetWords;
 
 	/** The list of unique words. */
 	private static List<String> myWords;
@@ -61,6 +70,7 @@ public class App {
 	 */
 	public static void main(String[] args) {
 		try {
+			populateTargetWords(VIOLENT_WORDS);
 			populateWordList();
 			populateStopwords();
 			populateWordInfo();
@@ -79,8 +89,22 @@ public class App {
 			System.out.println("Error while attempting to write to file.\n" + e.getMessage());
 			System.exit(1);
 		}
-
 		/* TODO - INCORPORATE OTHER FILE*/
+	}
+	
+	/**
+	 * This method populates words from a file that are the words we are trying
+	 * to isolate from the overall list of 5,000 words. This will dramatically focus
+	 * the task on identifying drug or violent words in a song and greatly reduce 
+	 * the output of the TF*IDF files. 
+	 * 
+	 * @param theFile The file of drug or violent words.
+	 * @throws FileNotFoundException An exception is thrown if the file is not found. 
+	 */
+	private static void populateTargetWords(final String theFile) throws FileNotFoundException {
+		myScanner = new Scanner(new File(theFile));
+		myTargetWords = new HashSet<String>();
+		while(myScanner.hasNext()) myTargetWords.add(myScanner.next());
 	}
 	
 
@@ -134,7 +158,12 @@ public class App {
 		while(myScanner.hasNextLine()) {
 			line = myScanner.nextLine();
 			String[] tokens = line.split("\\s+");
-			myWordInfo.put(tokens[0], Integer.valueOf(tokens[1]));
+			
+			// ONLY LOOK AT THE TARGETED WORDS
+			if(myTargetWords.contains(tokens[0])) {
+				myWordInfo.put(tokens[0], Integer.valueOf(tokens[1]));
+			}
+			
 		}
 		myScanner.close();
 	}
@@ -147,7 +176,7 @@ public class App {
 	 * @throws IOException Returns an error if could not write file.
 	 */
 	private static void computeTFIDF(final String fileName) throws IOException {
-		BufferedWriter bw = new BufferedWriter(new FileWriter(TFIDF_OUT, true));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(TFIDF_OUT, false));
 		myScanner = new Scanner(new File(fileName));
 		
 		String line = "";
@@ -177,7 +206,9 @@ public class App {
 				String[] data = wordToken.split(":");
 				Integer indexOfWord = Integer.valueOf(data[0]);
 				String word = myWords.get(indexOfWord - 1);
-				if(!myStopwords.contains(word)) {
+				
+				// ONLY LOOK AT TARGETED WORDS
+				if(myTargetWords.contains(word)) {
 					double tf = Double.valueOf(data[1]);
 					double idf = Math.log10(210519.0 / myWordInfo.get(word));
 
