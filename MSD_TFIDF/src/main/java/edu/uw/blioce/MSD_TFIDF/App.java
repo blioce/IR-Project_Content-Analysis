@@ -30,22 +30,22 @@ public class App {
 	private static final String MSD_DATA_FILE_1 = "src/mxm_dataset_train.txt";
 	
 	/** The testing data set. List of words are the same as in training set. */
-	private static final String MSD_DATA_FILE_2 = "src/mxm_dataset_test.txt";
+//	private static final String MSD_DATA_FILE_2 = "src/mxm_dataset_test.txt";
 	
 	/** The list of drugs words and non-drug words for balancing. */
-	private static final String DRUG_WORDS = "src/drug_words_balanced2.txt";
+	private static final String DRUG_WORDS = "src/drug_words_balanced.txt";
 	
 	/** The list of violent words and non-violent words for balancing. */
-	private static final String VIOLENT_WORDS = "src/violent_words_balanced2.txt";
+	private static final String VIOLENT_WORDS = "src/violent_words_balanced.txt";
 	
 	/** The file that contains the words and the number of tracks they appear in. */
-	private static final String WORD_DATA = "Updated_Word_Data.txt";
+	private static final String WORD_DATA = "Word_Data.txt";
 	
 	/** The file with a list of stopwords that have little meaning or significance. */
 	private static final String STOPWORDS = "src/stopwords.txt";
 	
 	/** The output file where the TF*IDF data should be written. */
-	private static final String TFIDF_OUT = "TFIDF_violent_words2.txt";
+	private static final String TFIDF_OUT = "TFIDF_drug_good_words.txt";
 
 	/** A scanner object. */
 	private static Scanner myScanner;
@@ -61,6 +61,9 @@ public class App {
 	
 	/** A set of stopwords to disregard. */
 	private static Set<String> myStopwords;
+	
+	/** A list of only the bad words. */
+	private static Set<String> badwords;
 
 	/**
 	 * The main entry to the program where the process of populating the known
@@ -70,7 +73,13 @@ public class App {
 	 */
 	public static void main(String[] args) {
 		try {
-			populateTargetWords(VIOLENT_WORDS);
+			myScanner = new Scanner(new File("src/just_drugs.txt"));
+			badwords = new HashSet<String>();
+			while(myScanner.hasNext()) {
+				badwords.add(myScanner.next());
+			}
+			
+			populateTargetWords(DRUG_WORDS);
 			populateWordList();
 			populateStopwords();
 			populateWordInfo();
@@ -78,13 +87,16 @@ public class App {
 			System.out.println("Could not find file.\n" + e.getMessage());
 			System.exit(1);
 		}
+		
+
+		
 
 		try {
 			/* WARNING -- CALLING THIS METHOD WILL APPEND TO THE FILE. TO START FRESH,
 			 * YOU MUST DELETE THE TFIDF_OUT.TXT FILE FIRST!
 			 */
 			computeTFIDF(MSD_DATA_FILE_1);
-			computeTFIDF(MSD_DATA_FILE_2);
+			//computeTFIDF(MSD_DATA_FILE_2);
 		} catch (IOException e) {
 			System.out.println("Error while attempting to write to file.\n" + e.getMessage());
 			System.exit(1);
@@ -178,7 +190,7 @@ public class App {
 	private static void computeTFIDF(final String fileName) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(TFIDF_OUT, false));
 		myScanner = new Scanner(new File(fileName));
-		
+
 		String line = "";
 		while(myScanner.hasNextLine()) {
 			line = myScanner.nextLine();
@@ -195,11 +207,13 @@ public class App {
 	 * @return Returns a String of the data on the line. 
 	 */
 	private static String parseLine(final String theLine) {
+		boolean isBad = false;
+		
 		String res = "";
 		if(theLine.charAt(0) != '#' && theLine.charAt(0) != '%') {
 			String[] tokens = theLine.split(",");
 			String MSD_id = tokens[0];
-
+			
 			res = MSD_id + ",";
 			for(int i = 2; i < tokens.length; i++) {
 				String wordToken = tokens[i];
@@ -208,15 +222,19 @@ public class App {
 				String word = myWords.get(indexOfWord - 1);
 				
 				// ONLY LOOK AT TARGETED WORDS
-				if(myTargetWords.contains(word)) {
+				if(myTargetWords.contains(word) && !badwords.contains(word)) {
+					//if(badwords.contains(word)) isBad = true;
+					
 					double tf = Double.valueOf(data[1]);
 					double idf = Math.log10(210519.0 / myWordInfo.get(word));
 
-					res += indexOfWord + ":" + tf*idf +",";
+					res += word + ":" + tf*idf +",";
 				} 
 			}
 			res += "\n";
 		}
+		//if(isBad) return res;
+		//else return "";
 		return res;
 	}	
 }
