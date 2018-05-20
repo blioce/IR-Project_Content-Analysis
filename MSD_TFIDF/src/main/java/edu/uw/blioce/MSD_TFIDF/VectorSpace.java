@@ -7,8 +7,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * This program will take in files that contain TF*IDF values for tracks
@@ -37,25 +41,82 @@ public class VectorSpace {
 	/** The list of good and drug/violent words, for indexing purposes. */
 	private static final String THE_WORDS = "src/" + D_or_V + "_words_balanced.txt";
 	
+	/** The file that contains the words and the number of tracks they appear in. */
+	private static final String WORD_DATA = "Word_Data.txt";
+	
+	/** The word and track occurrence mapping. */
+	private static Map<String, Integer> myWordInfo;
+	
 	/** The list of good and drug/violent words. */
 	private static List<String> myWords;
 	
+	/** A set of stopwords to disregard. */
+	private static Set<String> myStopwords;
+	
+	/** The file with a list of stopwords that have little meaning or significance. */
+	private static final String STOPWORDS = "src/stopwords.txt";
+	
 	/** The vector that will have TF*IDF values for each track. */
 	private static double[][] myVector;
+	
+	private static Scanner myScanner;
 
 	/**
 	 * This method initiates the vector space.
 	 * 
 	 * @param args No arguments are used. 
+	 * @throws FileNotFoundException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		try {
 			fillVector();
 		} catch (FileNotFoundException e) {
 			System.out.println(e);
 		}
 		
-		knn(myVector[1000], 5);
+		populateWordInfo();
+		
+		double[] d = songFromFile("violent_song_bag_of_words.txt");
+		knn(d, 5);
+	}
+	
+	private static double[] songFromFile(String theFile) throws FileNotFoundException {
+		double[] ret = new double[myWords.size()];
+		myScanner = new Scanner(new File(theFile));
+		String line = myScanner.nextLine();
+		String[] tokens = line.split(",");
+		for(int i = 0; i < tokens.length; i++) {
+			String[] token = tokens[i].split(":");
+			String word = token[0];
+			if(myWords.contains(word)) {
+				ret[myWords.indexOf(word)] = Double.valueOf(token[1]) * Math.log10(210519.0 / myWordInfo.get(word));
+			}
+		}
+		
+		return ret;
+	}
+	
+	/** 
+	 * This method reads the word info (word and the number of tracks it appears in)
+	 * from the file and loads it into a HashMap.
+	 * 
+	 * @throws FileNotFoundException Throws an exception if the file is not found.
+	 */
+	private static void populateWordInfo() throws FileNotFoundException {
+		myScanner = new Scanner(new File(WORD_DATA));
+		myWordInfo = new HashMap<String, Integer>();
+		String line = "";
+		while(myScanner.hasNextLine()) {
+			line = myScanner.nextLine();
+			String[] tokens = line.split("\\s+");
+			
+			// ONLY LOOK AT THE TARGETED WORDS
+			if(myWords.contains(tokens[0])) {
+				myWordInfo.put(tokens[0], Integer.valueOf(tokens[1]));
+			}
+			
+		}
+		myScanner.close();
 	}
 	
 	/**
@@ -65,7 +126,7 @@ public class VectorSpace {
 	 */
 	private static void fillVector() throws FileNotFoundException {
 		myWords = new ArrayList<String>();
-		Scanner myScanner = new Scanner(new File(THE_WORDS));
+		myScanner = new Scanner(new File(THE_WORDS));
 		while(myScanner.hasNext()) myWords.add(myScanner.next());
 		
 		myVector = new double[2000][myWords.size()];
@@ -98,6 +159,14 @@ public class VectorSpace {
 		
 	}
 	
+	/**
+	 * This method calculates the k-nearest neighbors for the given
+	 * array that contains TF*IDF values (already in the format needed
+	 * i.e. the appropriate order of words). 
+	 * 
+	 * @param theArray The song to be tested. 
+	 * @param k The number of nearest neighbors to compare to. 
+	 */
 	private static void knn(double[] theArray, int k) {
 		List<IndexToValue> theK = new ArrayList<IndexToValue>();
 		for(int i = 0; i < k; i++) theK.add(new IndexToValue(-1, 1000));
