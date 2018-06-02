@@ -3,16 +3,17 @@
  */
 package edu.uw.blioce.MSD_TFIDF;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * This program will take in files that contain TF*IDF values for tracks
@@ -32,6 +33,7 @@ public class VectorSpace {
 	/** Drug or violence? */
 	private static final String D_or_V = "violent";
 	
+	
 	/** The file that contains TF*IDF values for tracks with drug/violent words. */
 	private static final String THE_BAD = "TFIDF_" + D_or_V + "_bad_words.txt";
 	
@@ -50,24 +52,19 @@ public class VectorSpace {
 	/** The list of good and drug/violent words. */
 	private static List<String> myWords;
 	
-	/** A set of stopwords to disregard. */
-	private static Set<String> myStopwords;
-	
-	/** The file with a list of stopwords that have little meaning or significance. */
-	private static final String STOPWORDS = "src/stopwords.txt";
-	
 	/** The vector that will have TF*IDF values for each track. */
 	private static double[][] myVector;
 	
+	/** The scanner object. */
 	private static Scanner myScanner;
 
 	/**
 	 * This method initiates the vector space.
 	 * 
 	 * @param args No arguments are used. 
-	 * @throws FileNotFoundException 
+	 * @throws IOException An error if the evaluation file could not be written.
 	 */
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws IOException {
 		try {
 			fillVector();
 		} catch (FileNotFoundException e) {
@@ -76,10 +73,20 @@ public class VectorSpace {
 		
 		populateWordInfo();
 		
-		double[] d = songFromFile("violent_song_bag_of_words.txt");
-		knn(d, 5);
+		evaluation(5);
 	}
 	
+	/**
+	 * This method reads a song from a file and converts it into a vector that
+	 * can be used for cosine similarity. The file is created using the ReadSong.java
+	 * file and converts it into a bag of words. 
+	 * 
+	 * @author Brandon Lioce
+	 * 
+	 * @param theFile The file of the song, in a bag-of-words format. 
+	 * @return A vector that can be used for cosine similarity. 
+	 * @throws FileNotFoundException An error if the file could not be found. 
+	 */
 	private static double[] songFromFile(String theFile) throws FileNotFoundException {
 		double[] ret = new double[myWords.size()];
 		myScanner = new Scanner(new File(theFile));
@@ -99,6 +106,8 @@ public class VectorSpace {
 	/** 
 	 * This method reads the word info (word and the number of tracks it appears in)
 	 * from the file and loads it into a HashMap.
+	 * 
+	 * @author Brandon Lioce
 	 * 
 	 * @throws FileNotFoundException Throws an exception if the file is not found.
 	 */
@@ -121,6 +130,8 @@ public class VectorSpace {
 	
 	/**
 	 * This method fills the vector space with values from a file. 
+	 * 
+	 * @author Brandon Lioce
 	 * 
 	 * @throws FileNotFoundException Throws exception if not found. 
 	 */
@@ -164,17 +175,20 @@ public class VectorSpace {
 	 * array that contains TF*IDF values (already in the format needed
 	 * i.e. the appropriate order of words). 
 	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @param theArray The song to be tested. 
 	 * @param k The number of nearest neighbors to compare to. 
+	 * @return A double value of the count of flagged nearest neighbors divided by k. 
 	 */
-	private static void knn(double[] theArray, int k) {
+	private static double knn(double[] theArray, int k) {
 		List<IndexToValue> theK = new ArrayList<IndexToValue>();
 		for(int i = 0; i < k; i++) theK.add(new IndexToValue(-1, 1000));
 
 		for(int i = 0; i < myVector.length; i++) {
 			IndexToValue max = Collections.max(theK);
 			Double ret = compute(theArray, myVector[i]);
-			if(ret < max.value) {
+			if(ret < max.value && ret != 0) {
 				theK.remove(max);
 				theK.add(new IndexToValue(i, ret));
 			}
@@ -191,7 +205,29 @@ public class VectorSpace {
 		} else {
 			System.out.println("\nThis song is just fine. :)");
 		}
+		return count / k;
 		
+	}
+	
+	/**
+	 * This method is used to evaluate KNN for the given file. The file is 
+	 * set to violent or drugs at the top in the variable called D_or_V. This
+	 * will then iterate through the list in the vector space and calculate the 
+	 * k nearest neighbors for each vector. 
+	 * 
+	 * @author Brandon Lioce
+	 * 
+	 * @param k The value for K. The number of nearest neighbors to consider. 
+	 * @throws IOException Throws an exception if the file was not able to be written. 
+	 */
+	private static void evaluation(int k) throws IOException {
+		BufferedWriter bw = new BufferedWriter(new FileWriter(D_or_V + "_k" + k + ".txt"));
+		
+		for(int i = 0; i < 1999; i++) {
+			bw.write(knn(myVector[i], k) + "\t");
+		}
+		bw.write(knn(myVector[1999], k) + "\n");
+		bw.close();
 	}
 	
 	/**
@@ -247,15 +283,33 @@ public class VectorSpace {
 	}
 }
 
+/**
+ * This class is used as a helper to keep track of K nearest neighbors. 
+ * @author brand
+ *
+ */
 class IndexToValue implements Comparable<IndexToValue>{
+	
+	/** The index in the vector space. */
 	int index;
+	
+	/** The cosine similarity value. */
 	double value;
 	
+	/**
+	 * A constructor for the IndexToValue object. 
+	 * 
+	 * @param ind The index in the vector space.
+	 * @param val The cosine similarity value. 
+	 */
 	public IndexToValue(int ind, double val) {
 		index = ind;
 		value = val;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public int compareTo(IndexToValue theOther) {
 		if(this.value < theOther.value) return -1;
 		else if(this.value > theOther.value) return 1;

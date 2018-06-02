@@ -89,8 +89,6 @@ public class App {
 		}
 		
 
-		
-
 		try {
 			/* WARNING -- CALLING THIS METHOD WILL APPEND TO THE FILE. TO START FRESH,
 			 * YOU MUST DELETE THE TFIDF_OUT.TXT FILE FIRST!
@@ -101,7 +99,7 @@ public class App {
 			System.out.println("Error while attempting to write to file.\n" + e.getMessage());
 			System.exit(1);
 		}
-		/* TODO - INCORPORATE OTHER FILE*/
+
 	}
 	
 	/**
@@ -109,6 +107,8 @@ public class App {
 	 * to isolate from the overall list of 5,000 words. This will dramatically focus
 	 * the task on identifying drug or violent words in a song and greatly reduce 
 	 * the output of the TF*IDF files. 
+	 * 
+	 * @author Brandon Lioce
 	 * 
 	 * @param theFile The file of drug or violent words.
 	 * @throws FileNotFoundException An exception is thrown if the file is not found. 
@@ -123,6 +123,9 @@ public class App {
 	/** 
 	 * This method parses the list of words in the data file and stores them
 	 * in an indexed ArrayList object.
+	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @throws FileNotFoundException Error is thrown if file not found.
 	 */
 	private static void populateWordList() throws FileNotFoundException {
@@ -161,6 +164,8 @@ public class App {
 	 * This method reads the word info (word and the number of tracks it appears in)
 	 * from the file and loads it into a HashMap.
 	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @throws FileNotFoundException Throws an exception if the file is not found.
 	 */
 	private static void populateWordInfo() throws FileNotFoundException {
@@ -184,6 +189,9 @@ public class App {
 	 * This method computes the TF*IDF values for each line in the data file
 	 * (for each track). This uses the wordInfo data (from Word Data.txt file)
 	 * to computer the IDF.
+	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @param fileName The file to scan and compute TF*IDF.
 	 * @throws IOException Returns an error if could not write file.
 	 */
@@ -203,6 +211,9 @@ public class App {
 	/** 
 	 * This method returns the data that is on a given line of text including
 	 * the MSD trackId and each word and the frequency it appears in the song.
+	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @param theLine The line of text data to parse.
 	 * @return Returns a String of the data on the line. 
 	 */

@@ -15,6 +15,11 @@ import java.util.Set;
 
 import opennlp.tools.stemmer.PorterStemmer;
 
+/**
+ * 
+ * @author Zelun Jiang
+ *
+ */
 public class ReadSong {
 
 	/** The scanner object. */

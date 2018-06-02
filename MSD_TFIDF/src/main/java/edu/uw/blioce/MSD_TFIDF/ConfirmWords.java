@@ -52,6 +52,8 @@ public class ConfirmWords {
 	/**
 	 * This method populates a set of words from the MSD data file.
 	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @throws FileNotFoundException Exception if file could not be found.
 	 */
 	private static void populateWords() throws FileNotFoundException {
@@ -77,6 +79,8 @@ public class ConfirmWords {
 	 * This method compares the list of possibly suggestive words with the words
 	 * that are in the word set and writes them to a file if they are found in
 	 * in the set.
+	 * 
+	 * @author Brandon Lioce
 	 * 
 	 * @throws IOException Exception if a word could not be written to the file. 
 	 */

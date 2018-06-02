@@ -79,6 +79,8 @@ public class AllTrackInfo {
 	 * and then tokens in the form of wordIndex:count for each word that appears
 	 * in the song and is in the top 5,000 words. 
 	 * 
+	 * @author Brandon Lioce
+	 * 
 	 * @param doc Whether this is document 1 or 2 (train or test).
 	 * @throws FileNotFoundException Throws an exception if the scanner cannot find the document.
 	 */
@@ -116,6 +118,8 @@ public class AllTrackInfo {
 	 * This method writes the data (each word and the number of tracks in which it appears)
 	 * to a file in the form of the word followed by an integer. This data is separated by
 	 * lines, one for each word and integer.
+	 * 
+	 * @author Brandon Lioce
 	 * 
 	 * @throws IOException Throws an exception if there was an error while writing to the file.
 	 */
